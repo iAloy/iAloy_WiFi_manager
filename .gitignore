@@ -1,0 +1,7 @@
+CMakeFiles/
+*_autogen/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+iAloy_WiFi_manager
+*.user

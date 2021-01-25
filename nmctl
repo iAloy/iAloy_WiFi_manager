@@ -1,0 +1,177 @@
+#!/usr/bin/env python3
+#!/usr/bin/python
+#!/usr/bin/python3
+
+import os
+import re
+import sys
+import json
+import subprocess
+
+######################################
+# wifi [wifi status]
+# wifi <status> [status: on/off]
+# search [return json(bssid, ssid, signal, security, in-use)]
+# monitor [status of connected network]
+# connect <ssid> <!password>
+# disconnect <ssid>
+# forget <ssid>
+######################################
+
+def execute(command):
+	raw_output = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE)
+	return str(raw_output.stdout.read())[2:-1]
+
+def wifi_status(status = None):
+	if(status == None):
+		command = "nmcli r wifi"
+	elif(status == 1):
+		command = "nmcli r wifi on"
+	else:
+		command = "nmcli r wifi off"
+	output = execute(command)
+	print("OUT : ",output)
+
+def search():
+	# wifi scan list
+	command = "nmcli -f IN-USE,BSSID,SSID,SIGNAL,SECURITY d wifi list"
+	output = execute(command)
+	data = list()
+	wifi_list = list()
+
+	data_list = [i for i in output.split("\\n")[1:-1]]
+	for i in data_list:
+		data.append(i.split())
+
+	for i in data:
+		connected = False
+		wifi = dict()
+		if i[0] == "*":
+			connected = True
+		for j in range(len(i)-1, -1, -1):
+			if i[j].isnumeric():
+				security = False if i[j+1] == "--" else True
+				if(connected):
+					ssid = " ".join(i[2:j])
+					bssid = i[1]
+				else:
+					ssid = " ".join(i[1:j])
+					bssid = i[0]
+
+				wifi["SEC"] = security
+				wifi["SSID"] = ssid
+				wifi["BSSID"] = bssid
+				wifi["SIG"] = int(i[j])
+				wifi["USE"] = connected
+
+				wifi_list.append(wifi)
+				break
+
+	wifi_list = json.dumps(wifi_list, indent = 4)
+	return wifi_list
+
+def monitor():
+	# status of connected wifi network
+	search_data = json.loads(search())
+	for i in search_data:
+
+		if i["USE"]:
+			result = json.dumps({'SEC' :str(i["SEC"]),'SSID' :i["SSID"],'BSSID' :i["BSSID"],'SIG' :str(i["SIG"])}, indent = 4)
+			print(result)
+			return True
+
+	print("Not connected with any network!!!")
+	return False
+
+def connect(ssid, password = None):
+	# connect with the network
+	if(password != None):
+		command = "nmcli d wifi connect '"+ssid+"' password '"+password+"'"
+	else:
+		command = "nmcli d wifi connect '"+ssid+"'"
+
+	output = execute(command)
+	if re.findall("^Error:",output):
+		print("0")
+	else:
+		print("1")
+
+def disconnect(ssid):
+	# disconnect from the network
+	command = "nmcli con down id '"+ssid+"'"
+
+	output = execute(command)
+	print("OUT : ",output)
+	if re.findall("^Error:",output):
+		print("0")
+	else:
+		print("1")
+
+
+def forget(ssid):
+	# forget network
+	command = "nmcli connection delete id '"+ssid+"'"
+
+	output = execute(command)
+	print(output)
+	if re.findall("^Error:",output):
+		print("0")
+	else:
+		print("1")
+
+
+
+if __name__ == "__main__":
+	# total arguments
+	n = len(sys.argv)
+
+	if(n > 3):
+		if(sys.argv[1] == 'connect'):
+			connect(sys.argv[2], sys.argv[3])
+		else:
+			print("Invalid arguments!!!")
+			print(sys.argv)
+	elif(n == 3):
+		# handle params
+		if(sys.argv[1] == 'wifi'):
+			if(sys.argv[2] == 'on'):
+				wifi_status(1)
+				print("Successfully 'Connected' to the wifi")
+			elif(sys.argv[2] == 'off'):
+				wifi_status(0)
+				print("Successfully 'Disconnected' ")
+			else:
+				print("Invalid parameter!!!")
+				print(sys.argv)
+		elif(sys.argv[1] == 'connect'):
+			connect(sys.argv[2])
+		elif(sys.argv[1] == 'disconnect'):
+			disconnect(sys.argv[2])
+		elif(sys.argv[1] == 'forget'):
+			forget(sys.argv[2])
+		else:
+			print("Invalid parameter!!!")
+			print(sys.argv)
+	elif(n == 2):
+		# handle params
+		if(sys.argv[1] == 'wifi'):
+			wifi_status()
+		elif(sys.argv[1] == 'search'):
+			print(search())
+		elif(sys.argv[1] == 'monitor'):
+			monitor()
+		else:
+			print("Invalid parameter!!!")
+			print(sys.argv)
+	else:
+		# Show menu
+		print("\t*****Welcome to iAloy Network Control Panel***** \n\
+			***************************************** \n\
+			1. wifi [wifi status] \n\
+			2. wifi <status> [status: on/off] \n\
+			3. search \n\
+			4. monitor \n\
+			5. connect <ssid> <!password> \n\
+			6. disconnect <ssid> \n\
+			7. forget <ssid> \n\
+			*****************************************")
