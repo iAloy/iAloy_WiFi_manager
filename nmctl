@@ -30,7 +30,16 @@ def wifi_status(status = None):
 	else:
 		command = "nmcli r wifi off"
 	output = execute(command)
-	print("OUT : ",output)
+	if status != None:
+		if re.findall("^Error:",output):
+			print("0")
+		else:
+			print("1")
+	else:
+		if re.findall("^enabled",output):
+			print("1")
+		else:
+			print("0")
 
 def search():
 	# wifi scan list
@@ -120,7 +129,6 @@ def forget(ssid):
 		print("1")
 
 
-
 if __name__ == "__main__":
 	# total arguments
 	n = len(sys.argv)
@@ -136,10 +144,8 @@ if __name__ == "__main__":
 		if(sys.argv[1] == 'wifi'):
 			if(sys.argv[2] == 'on'):
 				wifi_status(1)
-				print("Successfully 'Connected' to the wifi")
 			elif(sys.argv[2] == 'off'):
 				wifi_status(0)
-				print("Successfully 'Disconnected' ")
 			else:
 				print("Invalid parameter!!!")
 				print(sys.argv)

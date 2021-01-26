@@ -32,10 +32,11 @@ private slots:
 	void getPasswordConnectSlot(QString password);
 
 	void on_scanBtn_clicked();
+//    void wifiStatusSlot();
 
 signals:
 	void getPasswordSignal();
-	void wifiStatus();
+//    void wifiStatusSignal();
 
 private:
 	Ui::MainWindow *ui;
@@ -53,5 +54,7 @@ private:
 		FORGET
 	};
 	int enum_status;
+	int wifi_status;
+	bool toggle_wifi;
 };
 #endif // MAINWINDOW_H
